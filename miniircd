@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # Hey, Emacs! This is -*-python-*-.
 #
-# Copyright (C) 2003-2018 Joel Rosdahl
+# Copyright (C) 2003-2019 Joel Rosdahl
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from optparse import OptionParser
 
-VERSION = "1.2.1"
+VERSION = "1.3"
 
 
 PY3 = sys.version_info[0] >= 3
@@ -139,6 +139,8 @@ class Client(object):
             (self.host, self.port, _, _) = socket.getpeername()
         else:
             (self.host, self.port) = socket.getpeername()
+        if self.server.cloak:
+            self.host = self.server.cloak
         self.__timestamp = time.time()
         self.__readbuffer = ""
         self.__writebuffer = ""
@@ -197,7 +199,7 @@ class Client(object):
             if len(arguments) == 0:
                 self.reply_461("PASS")
             else:
-                if arguments[0].lower() == server.password:
+                if arguments[0] == server.password:
                     self.__handle_command = self.__registration_handler
                 else:
                     self.reply("464 :Password incorrect")
@@ -698,6 +700,7 @@ class Server(object):
         self.log_max_bytes = options.log_max_size * 1024 * 1024
         self.log_count = options.log_count
         self.logger = None
+        self.cloak = options.cloak
 
         if options.password_file:
             with open(options.password_file, "r") as fp:
@@ -1003,6 +1006,10 @@ def main(argv):
         "--verbose",
         action="store_true",
         help="be verbose (print some progress messages to stdout)")
+    op.add_option(
+        "--cloak",
+        metavar="X",
+        help="report X as the host for all clients")
     if os.name == "posix":
         op.add_option(
             "--chroot",
