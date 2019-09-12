@@ -115,7 +115,7 @@ class TwoClientsTwoChannelsFixture(ServerFixture):
 
             self.expect("apa", r":lemur!lemur@127.0.0.1 JOIN #fisk")
             self.expect("apa", r":lemur!lemur@127.0.0.1 JOIN #brugd")
-        except:
+        except Exception:
             self.shutDown()
             raise
 
@@ -422,7 +422,7 @@ class TestBasicStuff(ServerFixture):
         self.send("apa", "lusers")
         self.expect("apa",
                     r":local\S+ 251 apa :There are \d+ users and \d+ services"
-                    " on \d+ servers*")
+                    r" on \d+ servers*")
 
 
 class TestTwoChannelsStuff(TwoClientsTwoChannelsFixture):

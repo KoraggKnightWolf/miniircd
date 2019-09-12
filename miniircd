@@ -735,11 +735,17 @@ class Server(object):
     def make_pid_file(self, filename):
         try:
             fd = os.open(filename, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0o644)
-            os.write(fd, "%i\n" % os.getpid())
+            os.write(fd, b"%i\n" % os.getpid())
             os.close(fd)
-        except:
+        except Exception:
             self.print_error("Could not create PID file %r" % filename)
             sys.exit(1)
+
+    def remove_pid_file(self, filename):
+        try:
+            os.remove(filename)
+        except Exception:
+            self.print_error("Could not remove PID file %r" % filename)
 
     def daemonize(self):
         try:
@@ -856,7 +862,7 @@ class Server(object):
         self.init_logging()
         try:
             self.run(serversockets)
-        except:
+        except Exception:
             if self.logger:
                 self.logger.exception("Fatal exception")
             raise
@@ -911,10 +917,10 @@ class Server(object):
                         self.clients[conn] = Client(self, conn)
                         self.print_info("Accepted connection from %s:%s." % (
                             addr[0], addr[1]))
-                    except socket.error as e:
+                    except socket.error:
                         try:
                             conn.close()
-                        except:
+                        except Exception:
                             pass
             for x in owtd:
                 if x in self.clients:  # client may have been disconnected
@@ -1065,6 +1071,8 @@ def main(argv):
             op.error("bad port: %r" % port)
     options.ports = ports
     server = Server(options)
+    if options.pid_file:
+        options.pid_file = os.path.abspath(options.pid_file)
     if options.daemon:
         server.daemonize()
     if options.pid_file:
@@ -1073,6 +1081,9 @@ def main(argv):
         server.start()
     except KeyboardInterrupt:
         server.print_error("Interrupted.")
+    finally:
+        if options.pid_file:
+            server.remove_pid_file(options.pid_file)
 
 
 if __name__ == "__main__":
